@@ -1,0 +1,45 @@
+name: bike-demand-hw1
+
+services:
+  silo:
+    image: docker.io/pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: ${SILO_ACCESS_KEY:?Set SILO_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: ${SILO_SECRET_KEY:?Set SILO_SECRET_KEY in .env}
+    ports:
+      - '${SILO_API_PORT:-5510}:9000'
+      - '${SILO_CONSOLE_PORT:-5511}:9001'
+    volumes:
+      - silo-data:/data
+    healthcheck:
+      test: ['CMD', 'mcli', 'ready', 'local']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  silo-create-bucket:
+    image: docker.io/pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    depends_on:
+      silo:
+        condition: service_healthy
+    environment:
+      SILO_ACCESS_KEY: ${SILO_ACCESS_KEY:?Set SILO_ACCESS_KEY in .env}
+      SILO_SECRET_KEY: ${SILO_SECRET_KEY:?Set SILO_SECRET_KEY in .env}
+      DVC_BUCKET: ${DVC_BUCKET:-dvc-storage}
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        mcli alias set silo http://silo:9000 "$$SILO_ACCESS_KEY" "$$SILO_SECRET_KEY"
+        mcli mb --ignore-existing "silo/$$DVC_BUCKET"
+        exec sleep infinity
+    healthcheck:
+      test: ['CMD-SHELL', 'mcli ls "silo/$$DVC_BUCKET" >/dev/null']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  silo-data:

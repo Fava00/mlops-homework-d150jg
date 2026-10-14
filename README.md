@@ -41,3 +41,23 @@ Prerequisites: `uv` (https://docs.astral.sh/uv/) and Python 3.12+ (uv installs i
 1. Add your dataset to `data/` and document it in `docs/DATA_DICTIONARY.md`.
 2. Write your one-page proposal in `docs/proposal.md` (Week 2 milestone).
 3. Follow [`HOMEWORK.md`](HOMEWORK.md) from HW1 onward.
+
+## HW1: version-one dataset storage
+
+The project uses the UCI hourly bike-sharing data to predict `cnt`, the number
+of rentals in an hour. `data/hour.csv` is tracked by DVC rather than Git. Its
+pointer is [`data/hour.csv.dvc`](data/hour.csv.dvc): MD5
+`d50bd5a6f55131e72a7bedc334e2fce1`, size **1,156,736 bytes**, with
+**17,379 data rows and 17 columns**.
+
+Copy `.env.example` to `.env` and replace the Silo credential placeholders with
+unique values. Start the local object store with `docker compose up -d --wait`.
+The Silo S3 API is on host port **5510** and its console is on **5511**. This is
+the same 55xx port block as the course labs, so stop a lab stack before starting
+this one. The Compose project has its own explicit name, `bike-demand-hw1`.
+
+For DVC commands, set `AWS_ACCESS_KEY_ID` from `SILO_ACCESS_KEY` and
+`AWS_SECRET_ACCESS_KEY` from `SILO_SECRET_KEY` in the Git-ignored `.env`, then
+run `uv run dvc push` or `uv run dvc pull`. See [`docs/hw1.md`](docs/hw1.md)
+for the PowerShell commands and verification output. Credentials are never
+stored in `.dvc/config`.

@@ -1,0 +1,7 @@
+[core]
+    analytics = false
+    remote = silo
+['remote "silo"']
+    url = s3://dvc-storage
+    endpointurl = http://127.0.0.1:5510
+    use_ssl = false
