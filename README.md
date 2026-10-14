@@ -47,8 +47,10 @@ Prerequisites: `uv` (https://docs.astral.sh/uv/) and Python 3.12+ (uv installs i
 The project uses the UCI hourly bike-sharing data to predict `cnt`, the number
 of rentals in an hour. `data/hour.csv` is tracked by DVC rather than Git. Its
 pointer is [`data/hour.csv.dvc`](data/hour.csv.dvc): MD5
-`d50bd5a6f55131e72a7bedc334e2fce1`, size **1,156,736 bytes**, with
-**17,379 data rows and 17 columns**.
+`bcbdba906e4a9964cfafed8b14549a62`, size **944,753 bytes**, with
+**17,379 data rows and 14 columns**. Version one of the pointer named the
+original 17-column CSV; version two removes `instant`, `casual` and
+`registered` before training.
 
 Copy `.env.example` to `.env` and replace the Silo credential placeholders with
 unique values. Start the local object store with `docker compose up -d --wait`.
