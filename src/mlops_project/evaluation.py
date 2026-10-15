@@ -27,5 +27,7 @@ def evaluate():
         mlflow.log_metrics(metrics)
         mlflow.log_param('test_rows', len(frame))
     Path('metrics').mkdir(exist_ok=True)
-    Path('metrics/metrics.json').write_text(json.dumps(metrics, indent=2) + '\n')
+    Path('metrics/metrics.json').write_text(
+        json.dumps(metrics, indent=2) + '\n', encoding='utf-8', newline='\n'
+    )
     print(json.dumps(metrics, indent=2))
