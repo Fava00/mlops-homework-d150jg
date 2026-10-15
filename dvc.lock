@@ -97,8 +97,8 @@ stages:
       size: 341
     - path: src/mlops_project/evaluation.py
       hash: md5
-      md5: e74f87e09aad8586a8ca401de2efdb21
-      size: 1178
+      md5: c5c942a11a1c54c93f4d3871ae0f48c7
+      size: 1224
     - path: src/mlops_project/pipeline.py
       hash: md5
       md5: 336a9e2349dc033a28cfe13f2790fc8f
@@ -110,5 +110,5 @@ stages:
     outs:
     - path: metrics/metrics.json
       hash: md5
-      md5: 479bea863e0467f88f547c915c05231f
-      size: 93
+      md5: 7c96a09db278260367a2ab34595814ab
+      size: 88
