@@ -67,18 +67,18 @@ stages:
       params.yaml:
         prepare.test_start: '2012-07-01'
         train:
-          n_estimators: 60
-          max_depth: 12
-          min_samples_leaf: 2
+          n_estimators: 100
+          max_depth: 16
+          min_samples_leaf: 1
           random_state: 42
     outs:
     - path: models/model.joblib
       hash: md5
-      md5: 7c213964491431d17396bd9dcbcee535
-      size: 13168161
+      md5: 44c756e87778cde23024f05618b40901
+      size: 76630497
     - path: models/run.json
       hash: md5
-      md5: ad91cc6f3b0185db408c7068f1605a5a
+      md5: edd8ce6796e9d70f7f91d6b1649b216e
       size: 341
   evaluate:
     cmd: uv run python -m mlops_project.pipeline evaluate
@@ -89,11 +89,11 @@ stages:
       size: 191223
     - path: models/model.joblib
       hash: md5
-      md5: 7c213964491431d17396bd9dcbcee535
-      size: 13168161
+      md5: 44c756e87778cde23024f05618b40901
+      size: 76630497
     - path: models/run.json
       hash: md5
-      md5: ad91cc6f3b0185db408c7068f1605a5a
+      md5: edd8ce6796e9d70f7f91d6b1649b216e
       size: 341
     - path: src/mlops_project/evaluation.py
       hash: md5
@@ -110,5 +110,5 @@ stages:
     outs:
     - path: metrics/metrics.json
       hash: md5
-      md5: e7ec319a062f79ec867ea8b49ffb930b
+      md5: 479bea863e0467f88f547c915c05231f
       size: 93

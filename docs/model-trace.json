@@ -1,0 +1,24 @@
+{
+  "model_uri": "models:/bike-demand-random-forest@staging",
+  "version": "1",
+  "run_id": "5907a49e09d24f678c8fb0ed265786c8",
+  "model_source": "models:/m-80f9206e5fa24e00a4004db7dae9a26b",
+  "params": {
+    "n_estimators": "100",
+    "max_depth": "16",
+    "min_samples_leaf": "1",
+    "random_state": "42",
+    "test_start": "2012-07-01",
+    "train_rows": "13003",
+    "test_rows": "4376"
+  },
+  "metrics": {
+    "rmse": 71.59136992253963,
+    "mae": 46.276018724760775,
+    "r2": 0.893807767570831
+  },
+  "git_commit": "6b133da40ddf7aa4636611362104e20ccabdeb74",
+  "dvc_md5": "bcbdba906e4a9964cfafed8b14549a62",
+  "data_remote_uri": "s3://dvc-storage/files/md5/bc/bdba906e4a9964cfafed8b14549a62",
+  "data_endpoint": "http://127.0.0.1:5510"
+}

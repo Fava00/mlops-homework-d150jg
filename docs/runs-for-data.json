@@ -1,0 +1,102 @@
+[
+  {
+    "run_id": "5907a49e09d24f678c8fb0ed265786c8",
+    "status": "FINISHED",
+    "params": {
+      "n_estimators": "100",
+      "max_depth": "16",
+      "min_samples_leaf": "1",
+      "random_state": "42",
+      "test_start": "2012-07-01",
+      "train_rows": "13003",
+      "test_rows": "4376"
+    },
+    "metrics": {
+      "rmse": 71.59136992253963,
+      "mae": 46.276018724760775,
+      "r2": 0.893807767570831
+    },
+    "git_commit": "6b133da40ddf7aa4636611362104e20ccabdeb74",
+    "data_remote_uri": "s3://dvc-storage/files/md5/bc/bdba906e4a9964cfafed8b14549a62"
+  },
+  {
+    "run_id": "8fa1c3602eab4a1d875ad616490b68af",
+    "status": "FINISHED",
+    "params": {
+      "n_estimators": "50",
+      "max_depth": "12",
+      "min_samples_leaf": "2",
+      "random_state": "42",
+      "test_start": "2012-07-01",
+      "train_rows": "13003",
+      "test_rows": "4376"
+    },
+    "metrics": {
+      "rmse": 73.56924993821379,
+      "mae": 47.82910894244221,
+      "r2": 0.8878590936763122
+    },
+    "git_commit": "0c459ecbb0b2a45a713fb6c1e70f2b04020a96f0",
+    "data_remote_uri": "s3://dvc-storage/files/md5/bc/bdba906e4a9964cfafed8b14549a62"
+  },
+  {
+    "run_id": "7367d37165664f99925fbddbda406317",
+    "status": "FINISHED",
+    "params": {
+      "n_estimators": "50",
+      "max_depth": "12",
+      "min_samples_leaf": "2",
+      "random_state": "42",
+      "test_start": "2012-07-01",
+      "train_rows": "13003",
+      "test_rows": "4376"
+    },
+    "metrics": {
+      "rmse": 73.56924993821379,
+      "mae": 47.82910894244221,
+      "r2": 0.8878590936763122
+    },
+    "git_commit": "f4904cc8f1e6e3c7cf7c6db02a71f3ffcbba0ecd",
+    "data_remote_uri": "s3://dvc-storage/files/md5/bc/bdba906e4a9964cfafed8b14549a62"
+  },
+  {
+    "run_id": "b6e7eb51f67747c0991cf0f0f74a9053",
+    "status": "FINISHED",
+    "params": {
+      "n_estimators": "60",
+      "max_depth": "12",
+      "min_samples_leaf": "2",
+      "random_state": "42",
+      "test_start": "2012-07-01",
+      "train_rows": "13003",
+      "test_rows": "4376"
+    },
+    "metrics": {
+      "rmse": 73.58143865913972,
+      "mae": 47.85640722037907,
+      "r2": 0.8878219322959596
+    },
+    "git_commit": "1d9ece22baccc23e232ed7f6268cd3a23727ee49",
+    "data_remote_uri": "s3://dvc-storage/files/md5/bc/bdba906e4a9964cfafed8b14549a62"
+  },
+  {
+    "run_id": "2823b459ab054a628cff67e003b844ac",
+    "status": "FINISHED",
+    "params": {
+      "n_estimators": "100",
+      "max_depth": "8",
+      "min_samples_leaf": "4",
+      "random_state": "42",
+      "test_start": "2012-07-01",
+      "train_rows": "13003",
+      "test_rows": "4376"
+    },
+    "metrics": {
+      "rmse": 89.81293810523012,
+      "mae": 60.03312596571071,
+      "r2": 0.832872001147928
+    },
+    "git_commit": "de2708c2b29f20c5bca8ccff4602b380f2523187",
+    "data_remote_uri": "s3://dvc-storage/files/md5/bc/bdba906e4a9964cfafed8b14549a62"
+  }
+]

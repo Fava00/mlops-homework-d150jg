@@ -11,18 +11,17 @@ own project, on your own dataset, and is what gets graded.
 ## What's here
 
 ```
-src/mlops_project/   config.py · data.py · model.py · cli.py   (a simple baseline pipeline)
-src/main.py          entry point
-tests/               smoke tests that pass on synthetic data (no dataset needed)
-data/                put your dataset here (see data/README.md)
-docs/                DATA_DICTIONARY.md (fill it in) + your proposal
+src/mlops_project/   preparation, training, evaluation, provenance and registry
+dvc.yaml             prepare → train → evaluate
+params.yaml          temporal split and Random Forest hyperparameters
+tests/               tests independent of the services and real dataset
+data/                DVC dataset pointer; local restored CSV
+docs/                homework evidence, data dictionary and proposal
 .env.example         configuration — copy to .env
 ```
 
-The baseline trains a scikit-learn `StandardScaler` + (logistic or linear)
-regression on a CSV you point it at — classification or regression, set by
-`PROBLEM_TYPE`. It's deliberately simple; the course is about the lifecycle, not
-the model.
+The generic template baseline remains in `src/main.py`; the commands below
+run the HW1 Random Forest pipeline.
 
 ## Quick start
 
@@ -73,6 +72,27 @@ R² to that same run and writes `metrics/metrics.json`. Run both stages to
 finish an experiment. `uv run dvc metrics show` displays the local metrics.
 The earlier generic template entry point is retained; use the commands above
 for the HW1 pipeline.
+
+## Experiments and registered model
+
+Four parameter settings are compared in [docs/hw1.md](docs/hw1.md). The
+selected model has 100 trees, depth 16 and minimum leaf size 1. Its evaluation
+RMSE is 71.59137 rentals/hour. This later period was used for model selection,
+so the result is not an untouched final-test estimate.
+
+The local MLflow registry alias is `models:/bike-demand-random-forest@staging`
+(version 1). Inspect it and find all runs on the current dataset with:
+
+```powershell
+uv run python -m mlops_project.registry trace
+uv run python -m mlops_project.registry runs-for-data bcbdba906e4a9964cfafed8b14549a62
+```
+
+To register a newly evaluated run explicitly, use
+`uv run python -m mlops_project.registry register <run-id>`. This creates a
+model version and moves the `staging` alias after checking the source run link.
+The saved trace and comparison are evidence; live registry state resides in
+the local PostgreSQL and Silo volumes.
 
 ## HW1: services and dataset storage
 

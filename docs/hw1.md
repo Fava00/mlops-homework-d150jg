@@ -1,5 +1,78 @@
 # HW1 evidence
 
+## Four-setting comparison and registry (R7–R9)
+
+All four settings use the same version-two dataset, split date 2012-07-01,
+13,003 earlier training rows, 4,376 later evaluation rows, and random seed 42.
+RMSE in rentals/hour is the primary selection metric because it penalizes
+large demand errors. The results queried from the local MLflow server are:
+
+| Trees | Maximum depth | Minimum leaf size | Run ID | RMSE | MAE | R² |
+| --- | --- | --- | --- | --- | --- | --- |
+| 50 | 12 | 2 | 8fa1c3602eab4a1d875ad616490b68af | 73.56925 | 47.82911 | 0.887859 |
+| 60 | 12 | 2 | b6e7eb51f67747c0991cf0f0f74a9053 | 73.58144 | 47.85641 | 0.887822 |
+| **100** | **16** | **1** | **5907a49e09d24f678c8fb0ed265786c8** | **71.59137** | **46.27602** | **0.893808** |
+| 100 | 8 | 4 | 2823b459ab054a628cff67e003b844ac | 89.81294 | 60.03313 | 0.832872 |
+
+The depth-16 model wins on RMSE and also has the lowest MAE. Increasing the
+original model from 50 to 60 trees made almost no difference, while the
+shallower forest had substantially larger errors. This small comparison does
+not establish a global optimum. Because the later period was used to select
+the model, its score is a selection-period score, not an untouched final-test
+estimate. A later deployment assessment should use another future period or
+rolling temporal evaluation. Observed weather covariates also mean this is
+conditional hourly demand estimation, not a demonstrated advance weather forecast.
+
+The winning settings are restored in `params.yaml`, `dvc.lock`, and the local
+metrics. DVC restored the matching cached outputs without creating a duplicate
+training run. The full data-hash query output is saved in
+[`runs-for-data.json`](runs-for-data.json), including the earlier duplicate
+50-tree run from the console-encoding investigation.
+
+```powershell
+uv run python -m mlops_project.registry runs-for-data bcbdba906e4a9964cfafed8b14549a62
+uv run python -m mlops_project.registry register 5907a49e09d24f678c8fb0ed265786c8
+uv run python -m mlops_project.registry trace
+```
+
+The query uses `tags.dvc_md5 = 'bcbdba906e4a9964cfafed8b14549a62'` in
+experiment `bike-demand-hw1` (ID 1). Registering is an explicit action that
+creates a new version; `trace` is read-only. The live trace is also saved in
+[`model-trace.json`](model-trace.json). It walks these real values:
+
+1. Alias `models:/bike-demand-random-forest@staging` resolves with
+   `MlflowClient.get_model_version_by_alias` to **version 1**.
+2. That version's persisted `run_id` is
+   `5907a49e09d24f678c8fb0ed265786c8`. It was registered from
+   `runs:/5907a49e09d24f678c8fb0ed265786c8/model`; its model source is
+   `models:/m-80f9206e5fa24e00a4004db7dae9a26b`.
+3. `MlflowClient.get_run` returns the winning parameters and metrics in the
+   table, plus `git_commit=6b133da40ddf7aa4636611362104e20ccabdeb74`.
+4. `git show 6b133da40ddf7aa4636611362104e20ccabdeb74:params.yaml` shows the
+   trained settings; `git show 6b133da40ddf7aa4636611362104e20ccabdeb74:data/hour.csv.dvc`
+   identifies MD5 `bcbdba906e4a9964cfafed8b14549a62`, matching the run tag.
+5. The run's `data_remote_uri` is
+   `s3://dvc-storage/files/md5/bc/bdba906e4a9964cfafed8b14549a62` and its
+   `data_endpoint` is `http://127.0.0.1:5510`. These identify the object in the
+   local Silo console on port 5511.
+
+As an end-to-end check, loading `models:/bike-demand-random-forest@staging`
+with `mlflow.sklearn.load_model` and predicting the evaluation CSV reproduced
+all three recorded metrics. The historical commit's DVC pointer was also
+checked against the run tag. The registry command refuses to set an alias if
+the newly registered version has a missing or different `run_id`.
+
+## Reflection
+
+The most confusing failure was a training command returning an error even
+though its model already appeared in MLflow. Reading the traceback showed
+that the failure occurred while printing MLflow's Unicode run link to a
+Windows cp1250 console, after the model was uploaded. Configuring UTF-8 in
+the CLI fixed it; completing evaluation for that run and reproducing the
+pipeline confirmed the distinction between a logging failure and a model
+training failure. The data-hash guard and Git tags helped keep the resulting
+runs traceable through this debugging process.
+
 ## Declared pipeline (R6) and initial tracked runs
 
 On 15 October 2026, `uv run dvc repro` completed prepare, train and evaluate.
@@ -36,12 +109,11 @@ checks that the actual CSV matches the pointer before logging its identity.
 | 50 | 8fa1c3602eab4a1d875ad616490b68af | 73.56925 | 47.82911 | 0.887859 |
 | 60 | b6e7eb51f67747c0991cf0f0f74a9053 | 73.58144 | 47.85641 | 0.887822 |
 
-Both use depth 12, minimum leaf size 2 and seed 42. These initial runs verify
-the pipeline; the required four-setting comparison and model registration
-remain pending. The 60-tree setting is retained to document the reproduction
-check, not as a claim that it is the winning model.
+Both use depth 12, minimum leaf size 2 and seed 42. These were the initial
+pipeline verification runs. The completed comparison and selected settings
+are documented above.
 
-The final run is FINISHED and records Git commit
+The 60-tree verification run is FINISHED and records Git commit
 `1d9ece22baccc23e232ed7f6268cd3a23727ee49`, DVC MD5
 `bcbdba906e4a9964cfafed8b14549a62`, and data URI
 `s3://dvc-storage/files/md5/bc/bdba906e4a9964cfafed8b14549a62`.
