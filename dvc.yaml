@@ -16,7 +16,6 @@ stages:
     deps:
       - data/processed/train.csv
       - data/hour.csv
-      - data/hour.csv.dvc
       - .dvc/config
       - src/mlops_project/training.py
       - src/mlops_project/provenance.py
