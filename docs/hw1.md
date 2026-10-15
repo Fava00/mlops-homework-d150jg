@@ -1,5 +1,52 @@
 # HW1 evidence
 
+## Final local fresh-clone verification
+
+On 15 October 2026, commit `42034e7` was cloned from this local repository
+into a new directory with no DVC cache or restored data. Only the ignored
+`.env` was copied for access to the existing local Silo service:
+
+```powershell
+# From the source checkout:
+$cloneRoot = Join-Path $env:TEMP 'hw1-registry-check-lf-20261015'
+git clone --local --no-hardlinks . $cloneRoot
+Copy-Item .env (Join-Path $cloneRoot '.env')
+Set-Location $cloneRoot
+uv sync --all-groups
+# Load AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY as documented below.
+uv run dvc pull
+uv run dvc repro
+uv run dvc repro
+uv run dvc metrics show
+Get-FileHash data/hour.csv -Algorithm MD5
+```
+
+```text
+dvc pull: 5 files fetched and 5 files added
+Both dvc repro invocations:
+  Stage 'prepare' didn't change, skipping
+  Stage 'train' didn't change, skipping
+  Stage 'evaluate' didn't change, skipping
+  Data and pipelines are up to date.
+metrics/metrics.json: mae=46.27602, r2=0.89381, rmse=71.59137
+Dataset MD5: BCBDBA906E4A9964CFAFED8B14549A62
+git status --short: no changes
+```
+
+With this project's services stopped using `docker compose stop` in the
+original checkout, `uv run pytest -q` in the fresh clone reported
+`11 passed in 4.66s`. The services were restarted afterwards.
+
+The first final-clone check exposed an unnecessary evaluation rerun: Python
+wrote CRLF metrics on Windows while Git checked out LF. The metrics writer
+now explicitly emits UTF-8 with LF, and the repeated fresh-clone check above
+confirms byte-identical outputs. The final verification commit changes only
+this evidence, not the validated code or pipeline state.
+
+These checks use the existing local Silo and MLflow storage. They do not
+establish access from another machine with empty Docker volumes. Grading
+access and repository submission remain to be arranged; no Git push was run.
+
 ## Four-setting comparison and registry (R7–R9)
 
 All four settings use the same version-two dataset, split date 2012-07-01,
