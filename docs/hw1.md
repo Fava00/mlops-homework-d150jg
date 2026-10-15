@@ -1,5 +1,63 @@
 # HW1 evidence
 
+## Declared pipeline (R6) and initial tracked runs
+
+On 15 October 2026, `uv run dvc repro` completed prepare, train and evaluate.
+The split at 2012-07-01 gives 13,003 training rows and 4,376 later evaluation
+rows. The 12 numeric/coded predictors are selected explicitly; dates determine
+ordering and the split, while ID and rental components are excluded.
+
+With unchanged inputs, the second invocation produced:
+
+```text
+'data\hour.csv.dvc' didn't change, skipping
+Stage 'prepare' didn't change, skipping
+Stage 'train' didn't change, skipping
+Stage 'evaluate' didn't change, skipping
+Data and pipelines are up to date.
+```
+
+Changing only `train.n_estimators` from 50 to 60 in `params.yaml` produced:
+
+```text
+Stage 'prepare' didn't change, skipping
+Running stage 'train':
+Running stage 'evaluate':
+```
+
+An unchanged invocation at 60 trees then skipped every stage again. The final
+`dvc.lock` and `metrics/metrics.json` are committed; metrics have `cache: false`.
+Source files are dependencies. DVC tracks dataset bytes as a dependency rather
+than accepting `.dvc` pointers as stage dependencies. Training independently
+checks that the actual CSV matches the pointer before logging its identity.
+
+| Trees | Run ID | RMSE | MAE | R² |
+| --- | --- | --- | --- | --- |
+| 50 | 8fa1c3602eab4a1d875ad616490b68af | 73.56925 | 47.82911 | 0.887859 |
+| 60 | b6e7eb51f67747c0991cf0f0f74a9053 | 73.58144 | 47.85641 | 0.887822 |
+
+Both use depth 12, minimum leaf size 2 and seed 42. These initial runs verify
+the pipeline; the required four-setting comparison and model registration
+remain pending. The 60-tree setting is retained to document the reproduction
+check, not as a claim that it is the winning model.
+
+The final run is FINISHED and records Git commit
+`1d9ece22baccc23e232ed7f6268cd3a23727ee49`, DVC MD5
+`bcbdba906e4a9964cfafed8b14549a62`, and data URI
+`s3://dvc-storage/files/md5/bc/bdba906e4a9964cfafed8b14549a62`.
+It contains the logged sklearn model, parameters and all three metrics.
+The evaluate stage resumes the training run to attach its metrics.
+
+All eight tests passed with the project services stopped; the stack was then
+restarted successfully. `dvc push` uploaded four pipeline outputs to local
+Silo. No Git push was performed.
+
+During setup, MLflow's Unicode status message exposed Windows' cp1250 console
+encoding after a model had been logged. The traceback pointed to stdout
+encoding, so the pipeline CLI now configures UTF-8. The first interrupted
+invocation's run was evaluated by hand; a subsequent complete DVC invocation
+produced the 50-tree run listed above.
+
 ## Local services (R2)
 
 On 15 October 2026 the Compose configuration was extended using the supplied

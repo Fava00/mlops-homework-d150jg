@@ -1,0 +1,114 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: uv run python -m mlops_project.pipeline prepare
+    deps:
+    - path: data/hour.csv
+      hash: md5
+      md5: bcbdba906e4a9964cfafed8b14549a62
+      size: 944753
+    - path: src/mlops_project/pipeline.py
+      hash: md5
+      md5: 336a9e2349dc033a28cfe13f2790fc8f
+      size: 787
+    - path: src/mlops_project/preparation.py
+      hash: md5
+      md5: 1ded2b5a789fdf4bcae7b6090ec4af21
+      size: 1321
+    - path: uv.lock
+      hash: md5
+      md5: b9eaaae0b480825e6944280310b10339
+      size: 734334
+    params:
+      params.yaml:
+        prepare:
+          test_start: '2012-07-01'
+    outs:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 3d28817d6f75113fdb43f06c93096174
+      size: 191223
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 12bd3061cb5f4b50404614168bd7a86e
+      size: 562439
+  train:
+    cmd: uv run python -m mlops_project.pipeline train
+    deps:
+    - path: .dvc/config
+      hash: md5
+      md5: 0bf525bdbbec00587240e40dcd203624
+      size: 152
+    - path: data/hour.csv
+      hash: md5
+      md5: bcbdba906e4a9964cfafed8b14549a62
+      size: 944753
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 12bd3061cb5f4b50404614168bd7a86e
+      size: 562439
+    - path: src/mlops_project/pipeline.py
+      hash: md5
+      md5: 336a9e2349dc033a28cfe13f2790fc8f
+      size: 787
+    - path: src/mlops_project/provenance.py
+      hash: md5
+      md5: 6615b3fd93b555740153d11d609fd65c
+      size: 1134
+    - path: src/mlops_project/training.py
+      hash: md5
+      md5: e5e353b07367e2a88b7df3ea864c9971
+      size: 1388
+    - path: uv.lock
+      hash: md5
+      md5: b9eaaae0b480825e6944280310b10339
+      size: 734334
+    params:
+      params.yaml:
+        prepare.test_start: '2012-07-01'
+        train:
+          n_estimators: 60
+          max_depth: 12
+          min_samples_leaf: 2
+          random_state: 42
+    outs:
+    - path: models/model.joblib
+      hash: md5
+      md5: 7c213964491431d17396bd9dcbcee535
+      size: 13168161
+    - path: models/run.json
+      hash: md5
+      md5: ad91cc6f3b0185db408c7068f1605a5a
+      size: 341
+  evaluate:
+    cmd: uv run python -m mlops_project.pipeline evaluate
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 3d28817d6f75113fdb43f06c93096174
+      size: 191223
+    - path: models/model.joblib
+      hash: md5
+      md5: 7c213964491431d17396bd9dcbcee535
+      size: 13168161
+    - path: models/run.json
+      hash: md5
+      md5: ad91cc6f3b0185db408c7068f1605a5a
+      size: 341
+    - path: src/mlops_project/evaluation.py
+      hash: md5
+      md5: e74f87e09aad8586a8ca401de2efdb21
+      size: 1178
+    - path: src/mlops_project/pipeline.py
+      hash: md5
+      md5: 336a9e2349dc033a28cfe13f2790fc8f
+      size: 787
+    - path: uv.lock
+      hash: md5
+      md5: b9eaaae0b480825e6944280310b10339
+      size: 734334
+    outs:
+    - path: metrics/metrics.json
+      hash: md5
+      md5: e7ec319a062f79ec867ea8b49ffb930b
+      size: 93

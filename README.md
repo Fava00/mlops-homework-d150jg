@@ -1,8 +1,8 @@
-# My MLOps Project
+# Bike Sharing Demand — MLOps HW1
 
-Your semester-long project for **Lifecycle of Artificial Intelligence Systems**.
-You start from this minimal, working baseline and grow it into a full MLOps
-project across HW1–HW5 — see [`HOMEWORK.md`](HOMEWORK.md).
+Predict hourly Capital Bikeshare rentals (`cnt`) using calendar and weather
+features from the UCI Bike Sharing Dataset. HW1 adds DVC data versioning,
+a reproducible Random Forest pipeline, and MLflow tracking.
 
 This repo is **separate from the course materials**. The course repo (lectures,
 labs, datasets, homework briefs) you read and do the labs in; *this* repo is your
@@ -26,21 +26,28 @@ the model.
 
 ## Quick start
 
-```bash
-cp .env.example .env          # set DATA_PATH, TARGET_COLUMN, PROBLEM_TYPE
+```powershell
+Copy-Item .env.example .env   # fresh clone only; fill in credential placeholders
 uv sync --all-groups
-uv run pytest -v              # green immediately (synthetic data)
-# drop your dataset in data/ and:
-uv run python src/main.py     # baseline metrics on your data
+uv run pytest -q             # also works with the services stopped
+docker compose up -d --wait
+# Load the Silo credentials for DVC (PowerShell):
+$lines = Get-Content .env
+$env:AWS_ACCESS_KEY_ID = (($lines | Where-Object { $_ -match '^SILO_ACCESS_KEY=' }) -replace '^SILO_ACCESS_KEY=', '')
+$env:AWS_SECRET_ACCESS_KEY = (($lines | Where-Object { $_ -match '^SILO_SECRET_KEY=' }) -replace '^SILO_SECRET_KEY=', '')
+uv run dvc pull
+uv run dvc repro
+uv run dvc repro             # unchanged stages should all be skipped
+uv run dvc metrics show
+uv run dvc dag
 ```
 
 Prerequisites: `uv` (https://docs.astral.sh/uv/) and Python 3.12+ (uv installs it).
 
-## Next
-
-1. Add your dataset to `data/` and document it in `docs/DATA_DICTIONARY.md`.
-2. Write your one-page proposal in `docs/proposal.md` (Week 2 milestone).
-3. Follow [`HOMEWORK.md`](HOMEWORK.md) from HW1 onward.
+The local Silo volume must already contain the uploaded data and pipeline
+outputs. Starting an empty Silo instance on a different machine does not copy
+these objects. The remote endpoint/access arrangements for grading remain to
+be established. Experiments and registry state also live in the local services.
 
 ## HW1 pipeline
 
