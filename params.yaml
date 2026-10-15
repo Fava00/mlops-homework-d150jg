@@ -1,7 +1,7 @@
 prepare:
   test_start: '2012-07-01'
 train:
-  n_estimators: 50
+  n_estimators: 60
   max_depth: 12
   min_samples_leaf: 2
   random_state: 42
