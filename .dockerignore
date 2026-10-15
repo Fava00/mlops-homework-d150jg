@@ -1,0 +1,3 @@
+# The tracking-server image needs no project data, code, or credentials.
+**
+!mlflow.Dockerfile

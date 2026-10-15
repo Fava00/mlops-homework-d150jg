@@ -42,7 +42,32 @@ Prerequisites: `uv` (https://docs.astral.sh/uv/) and Python 3.12+ (uv installs i
 2. Write your one-page proposal in `docs/proposal.md` (Week 2 milestone).
 3. Follow [`HOMEWORK.md`](HOMEWORK.md) from HW1 onward.
 
-## HW1: version-one dataset storage
+## HW1 pipeline
+
+With the services running and the dataset restored, run `uv run dvc repro`.
+The three stages can also be run by hand:
+
+```powershell
+uv run python -m mlops_project.pipeline prepare
+uv run python -m mlops_project.pipeline train
+uv run python -m mlops_project.pipeline evaluate
+```
+
+`params.yaml` sets the split date and Random Forest hyperparameters. Training
+uses observations before 1 July 2012; evaluation uses all subsequent hours.
+This is a chronological holdout, and its results describe that particular
+future period. The pipeline uses 12 calendar/weather predictors and excludes
+the date, row ID and the two components of the target. The date is used only
+to establish the split and ordering.
+
+Training logs parameters, the model, Git commit, verified DVC MD5 and Silo
+object URI to the `bike-demand-hw1` experiment. Evaluation adds RMSE, MAE and
+R² to that same run and writes `metrics/metrics.json`. Run both stages to
+finish an experiment. `uv run dvc metrics show` displays the local metrics.
+The earlier generic template entry point is retained; use the commands above
+for the HW1 pipeline.
+
+## HW1: services and dataset storage
 
 The project uses the UCI hourly bike-sharing data to predict `cnt`, the number
 of rentals in an hour. `data/hour.csv` is tracked by DVC rather than Git. Its
@@ -52,11 +77,26 @@ pointer is [`data/hour.csv.dvc`](data/hour.csv.dvc): MD5
 original 17-column CSV; version two removes `instant`, `casual` and
 `registered` before training.
 
-Copy `.env.example` to `.env` and replace the Silo credential placeholders with
-unique values. Start the local object store with `docker compose up -d --wait`.
-The Silo S3 API is on host port **5510** and its console is on **5511**. This is
+Copy `.env.example` to `.env` and replace the Silo and PostgreSQL credential
+placeholders with unique values. Use a URL-safe PostgreSQL password as explained
+in `.env.example`. Start the services with `docker compose up -d --wait`.
+Compose builds the tracking server from `mlflow.Dockerfile` on first use.
+The long-running services should be healthy; `silo-create-bucket` should exit
+successfully with code 0 after creating the data and artifact buckets.
+
+| Service | Host port | Address |
+| --- | --- | --- |
+| MLflow | 5500 | http://localhost:5500 |
+| Silo S3 API | 5510 | http://localhost:5510 |
+| Silo console | 5511 | http://localhost:5511 |
+| PostgreSQL | 5532 | localhost:5532 |
+
+This is
 the same 55xx port block as the course labs, so stop a lab stack before starting
 this one. The Compose project has its own explicit name, `bike-demand-hw1`.
+Run `docker compose down` to stop it while retaining the data and experiments.
+`docker compose down -v` deletes the storage volumes, including DVC objects and
+MLflow runs, so it must not be used for a routine shutdown.
 
 For DVC commands, set `AWS_ACCESS_KEY_ID` from `SILO_ACCESS_KEY` and
 `AWS_SECRET_ACCESS_KEY` from `SILO_SECRET_KEY` in the Git-ignored `.env`, then

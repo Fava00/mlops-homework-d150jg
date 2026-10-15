@@ -1,6 +1,23 @@
 name: bike-demand-hw1
 
 services:
+  postgres:
+    image: postgres:16.3
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+    ports:
+      - '${POSTGRES_HOST_PORT:-5532}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   silo:
     image: docker.io/pgsty/silo:RELEASE.2026-09-16T00-00-00Z
     command: server /data --console-address ':9001'
@@ -28,18 +45,49 @@ services:
       SILO_ACCESS_KEY: ${SILO_ACCESS_KEY:?Set SILO_ACCESS_KEY in .env}
       SILO_SECRET_KEY: ${SILO_SECRET_KEY:?Set SILO_SECRET_KEY in .env}
       DVC_BUCKET: ${DVC_BUCKET:-dvc-storage}
+      MLFLOW_BUCKET: ${MLFLOW_BUCKET:-mlflow-artifacts}
     entrypoint:
       - /bin/sh
       - -ec
       - |
         mcli alias set silo http://silo:9000 "$$SILO_ACCESS_KEY" "$$SILO_SECRET_KEY"
         mcli mb --ignore-existing "silo/$$DVC_BUCKET"
-        exec sleep infinity
+        mcli mb --ignore-existing "silo/$$MLFLOW_BUCKET"
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: mlflow.Dockerfile
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: http://silo:9000
+      AWS_ACCESS_KEY_ID: ${SILO_ACCESS_KEY:?Set SILO_ACCESS_KEY in .env}
+      AWS_SECRET_ACCESS_KEY: ${SILO_SECRET_KEY:?Set SILO_SECRET_KEY in .env}
+    command:
+      - --backend-store-uri
+      - postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - --artifacts-destination
+      - s3://${MLFLOW_BUCKET:-mlflow-artifacts}
+      - --host
+      - '0.0.0.0'
+      - --port
+      - '5000'
+      - --allowed-hosts
+      - 'localhost,127.0.0.1,mlflow,localhost:*,127.0.0.1:*,mlflow:*'
+    ports:
+      - '${MLFLOW_PORT:-5500}:5000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      silo-create-bucket:
+        condition: service_completed_successfully
     healthcheck:
-      test: ['CMD-SHELL', 'mcli ls "silo/$$DVC_BUCKET" >/dev/null']
-      interval: 5s
-      timeout: 5s
-      retries: 12
+      test: ['CMD', 'python', '-c', 'import urllib.request; urllib.request.urlopen("http://localhost:5000/health", timeout=5)']
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
 
 volumes:
   silo-data:
+  postgres-data:

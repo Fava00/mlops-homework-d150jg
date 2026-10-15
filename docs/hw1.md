@@ -1,5 +1,30 @@
 # HW1 evidence
 
+## Local services (R2)
+
+On 15 October 2026 the Compose configuration was extended using the supplied
+Week 5 lab stack, which uses the same infrastructure as Week 4. No Week 5
+validation functionality is included. The project keeps its existing
+`bike-demand-hw1` name and `silo-data` volume so the two stored dataset versions
+remain available. The existing Silo image also supplies `mcli` for the bucket
+job; the project keeps its `SILO_*` variable names.
+
+```text
+docker compose up -d --wait --build
+exit code: 0
+
+SERVICE              STATE     HEALTH    EXIT CODE
+mlflow               running   healthy   0
+postgres             running   healthy   0
+silo                 running   healthy   0
+silo-create-bucket   exited              0
+```
+
+The bucket job now creates both `dvc-storage` and `mlflow-artifacts`, then
+exits. MLflow waits for its successful completion and PostgreSQL readiness.
+The server uses the course's pinned MLflow 3.13.0 dependencies. Actual passwords
+are stored in ignored `.env`; `.env.example` contains placeholders.
+
 ## Dataset version 1
 
 The original UCI hourly bike-sharing `data/hour.csv` is the first DVC version.
@@ -81,3 +106,26 @@ uv run dvc add data/hour.csv
 uv run dvc push
 1 file pushed
 ```
+
+### Switching between committed versions (R5)
+
+Version one is commit `5486412`; version two is commit `af5f928`. The following
+commands were executed, restoring version two at the end:
+
+```text
+git checkout 5486412 -- data/hour.csv.dvc
+uv run dvc checkout data/hour.csv
+M       data\hour.csv
+Get-FileHash data/hour.csv -Algorithm MD5
+D50BD5A6F55131E72A7BEDC334E2FCE1
+
+git checkout af5f928 -- data/hour.csv.dvc
+uv run dvc checkout data/hour.csv
+M       data\hour.csv
+Get-FileHash data/hour.csv -Algorithm MD5
+BCBDBA906E4A9964CFAFED8B14549A62
+```
+
+Git selects the pointer; DVC restores the bytes named by that pointer from its
+cache. Both hashes were also confirmed present in Silo after extending the
+Compose stack.

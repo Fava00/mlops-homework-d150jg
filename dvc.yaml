@@ -1,0 +1,42 @@
+stages:
+  prepare:
+    cmd: uv run python -m mlops_project.pipeline prepare
+    deps:
+      - data/hour.csv
+      - src/mlops_project/preparation.py
+      - src/mlops_project/pipeline.py
+      - uv.lock
+    params:
+      - prepare
+    outs:
+      - data/processed/train.csv
+      - data/processed/test.csv
+  train:
+    cmd: uv run python -m mlops_project.pipeline train
+    deps:
+      - data/processed/train.csv
+      - data/hour.csv
+      - data/hour.csv.dvc
+      - .dvc/config
+      - src/mlops_project/training.py
+      - src/mlops_project/provenance.py
+      - src/mlops_project/pipeline.py
+      - uv.lock
+    params:
+      - train
+      - prepare.test_start
+    outs:
+      - models/model.joblib
+      - models/run.json
+  evaluate:
+    cmd: uv run python -m mlops_project.pipeline evaluate
+    deps:
+      - data/processed/test.csv
+      - models/model.joblib
+      - models/run.json
+      - src/mlops_project/evaluation.py
+      - src/mlops_project/pipeline.py
+      - uv.lock
+    metrics:
+      - metrics/metrics.json:
+          cache: false
