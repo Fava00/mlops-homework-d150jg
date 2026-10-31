@@ -2,7 +2,7 @@
 
 ## Final local fresh-clone verification
 
-On 15 October 2026, commit `42034e7` was cloned from this local repository
+On October 15, commit `42034e7` was cloned from this local repository
 into a new directory with no DVC cache or restored data. Only the ignored
 `.env` was copied for access to the existing local Silo service:
 
@@ -33,26 +33,15 @@ Dataset MD5: BCBDBA906E4A9964CFAFED8B14549A62
 git status --short: no changes
 ```
 
-With this project's services stopped using `docker compose stop` in the
-original checkout, `uv run pytest -q` in the fresh clone reported
-`11 passed in 4.66s`. The services were restarted afterwards.
+I ran `docker compose stop` to stop the services, then ran `uv run pytest -q` in the fresh clone and got `11 passed in 4.66s`. I started the services up again afterwards.
 
-The first final-clone check exposed an unnecessary evaluation rerun: Python
-wrote CRLF metrics on Windows while Git checked out LF. The metrics writer
-now explicitly emits UTF-8 with LF, and the repeated fresh-clone check above
-confirms byte-identical outputs. The final verification commit changes only
-this evidence, not the validated code or pipeline state.
+The first run on the final clone showed an unnecessary reevaluation was happening: it seems Python writes the metrics file with CRLF on Windows, while Git checked it out with LF. Now the metrics writer explicitly writes UTF-8 with LF, and the repeated run above shows that the outputs are byte-identical. The final verification commit changes only this evidence; the validated code and the state of the pipeline remain unchanged.
 
-These checks use the existing local Silo and MLflow storage. They do not
-establish access from another machine with empty Docker volumes. Grading
-access and repository submission remain to be arranged; no Git push was run.
+This set of runs uses the existing local Silo and MLflow storage. It doesn't check for access from another machine with clean Docker volumes. Grading access and repository submission are pending; no Git push was run.
 
 ## Four-setting comparison and registry (R7–R9)
 
-All four settings use the same version-two dataset, split date 2012-07-01,
-13,003 earlier training rows, 4,376 later evaluation rows, and random seed 42.
-RMSE in rentals/hour is the primary selection metric because it penalizes
-large demand errors. The results queried from the local MLflow server are:
+All four configurations use the same version-two dataset, split on 2012-07-01 into 13,003 earlier training rows and 4,376 later evaluation rows, with random seed 42. RMSE in rentals/hour is the main selection metric since it penalizes large errors in demand. The results from the MLflow server on localhost are:
 
 | Trees | Maximum depth | Minimum leaf size | Run ID | RMSE | MAE | R² |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -61,20 +50,9 @@ large demand errors. The results queried from the local MLflow server are:
 | **100** | **16** | **1** | **5907a49e09d24f678c8fb0ed265786c8** | **71.59137** | **46.27602** | **0.893808** |
 | 100 | 8 | 4 | 2823b459ab054a628cff67e003b844ac | 89.81294 | 60.03313 | 0.832872 |
 
-The depth-16 model wins on RMSE and also has the lowest MAE. Increasing the
-original model from 50 to 60 trees made almost no difference, while the
-shallower forest had substantially larger errors. This small comparison does
-not establish a global optimum. Because the later period was used to select
-the model, its score is a selection-period score, not an untouched final-test
-estimate. A later deployment assessment should use another future period or
-rolling temporal evaluation. Observed weather covariates also mean this is
-conditional hourly demand estimation, not a demonstrated advance weather forecast.
+The model with depth 16 has the lowest RMSE as well as the lowest MAE. Increasing the original model from 50 to 60 trees made no difference, and the error for the shallower forest was much higher. However, this comparison is not exhaustive and does not identify a global optimum. Because the models were selected based on their performance in this time period, this score is really the selection period score, not a test period evaluation. The deployment metric should be evaluated on yet another, future period, or a rolling temporal assessment. Furthermore, since weather covariates are observed and used in the model, this is conditional hourly demand estimation, not a demonstrated advance weather forecast.
 
-The winning settings are restored in `params.yaml`, `dvc.lock`, and the local
-metrics. DVC restored the matching cached outputs without creating a duplicate
-training run. The full data-hash query output is saved in
-[`runs-for-data.json`](runs-for-data.json), including the earlier duplicate
-50-tree run from the console-encoding investigation.
+The winning parameters are set in `params.yaml` and recorded in `dvc.lock` as well as in the local metrics. The DVC command restored the matching cached outputs and did not run another training process, which would have resulted in duplicate model outputs. The full data-hash query results are saved as [`runs-for-data.json`](runs-for-data.json), including the duplicate earlier run with 50 trees from the console-encoding experiment.
 
 ```powershell
 uv run python -m mlops_project.registry runs-for-data bcbdba906e4a9964cfafed8b14549a62
@@ -82,10 +60,7 @@ uv run python -m mlops_project.registry register 5907a49e09d24f678c8fb0ed265786c
 uv run python -m mlops_project.registry trace
 ```
 
-The query uses `tags.dvc_md5 = 'bcbdba906e4a9964cfafed8b14549a62'` in
-experiment `bike-demand-hw1` (ID 1). Registering is an explicit action that
-creates a new version; `trace` is read-only. The live trace is also saved in
-[`model-trace.json`](model-trace.json). It walks these real values:
+The data-hash query is implemented as `tags.dvc_md5 = 'bcbdba906e4a9964cfafed8b14549a62'` in experiment `bike-demand-hw1`(ID 1). Registering results in a version change, whereas `trace` reads an existing version. The live trace is also saved in [`model-trace.json`](model-trace.json). This is a concrete example for a real value trace:
 
 1. Alias `models:/bike-demand-random-forest@staging` resolves with
    `MlflowClient.get_model_version_by_alias` to **version 1**.
@@ -103,29 +78,18 @@ creates a new version; `trace` is read-only. The live trace is also saved in
    `data_endpoint` is `http://127.0.0.1:5510`. These identify the object in the
    local Silo console on port 5511.
 
-As an end-to-end check, loading `models:/bike-demand-random-forest@staging`
-with `mlflow.sklearn.load_model` and predicting the evaluation CSV reproduced
-all three recorded metrics. The historical commit's DVC pointer was also
-checked against the run tag. The registry command refuses to set an alias if
-the newly registered version has a missing or different `run_id`.
+As an end-to-end validation step, the model was loaded via `mlflow.sklearn.load_model` for the evaluation CSV and the resulting values matched all three metrics that were logged in MLflow. The check was also implemented for the commit of the historical DVC hash pointer to the run tag. The MLflow registry command fails to set an alias if the newly registered model version has a missing or different `run_id`.
 
 ## Reflection
 
-The most confusing failure was a training command returning an error even
-though its model already appeared in MLflow. Reading the traceback showed
-that the failure occurred while printing MLflow's Unicode run link to a
-Windows cp1250 console, after the model was uploaded. Configuring UTF-8 in
-the CLI fixed it; completing evaluation for that run and reproducing the
-pipeline confirmed the distinction between a logging failure and a model
-training failure. The data-hash guard and Git tags helped keep the resulting
-runs traceable through this debugging process.
+The most confusing error was a training command which resulted in an error message, despite the model's appearance in MLflow: inspecting the traceback revealed that the error was raised when MLflow's printed Unicode run URL was written to a Windows cp1250 console, after the model had already been saved. Configuring UTF-8 in the CLI solved this issue; completing the evaluation for this run and re-running the full pipeline confirmed the distinction between a logging failure and a training failure in this case. The data-hash guard and Git tags facilitated tracing of the resulting runs during this debugging process.
 
 ## Declared pipeline (R6) and initial tracked runs
 
-On 15 October 2026, `uv run dvc repro` completed prepare, train and evaluate.
+`uv run dvc repro` completed prepare, train and evaluate.
 The split at 2012-07-01 gives 13,003 training rows and 4,376 later evaluation
-rows. The 12 numeric/coded predictors are selected explicitly; dates determine
-ordering and the split, while ID and rental components are excluded.
+rows. The 12 numeric predictors explicitly selected, dates determine
+ordering and the split,and ID and rental components are excluded.
 
 With unchanged inputs, the second invocation produced:
 
@@ -145,11 +109,12 @@ Running stage 'train':
 Running stage 'evaluate':
 ```
 
-An unchanged invocation at 60 trees then skipped every stage again. The final
-`dvc.lock` and `metrics/metrics.json` are committed; metrics have `cache: false`.
-Source files are dependencies. DVC tracks dataset bytes as a dependency rather
-than accepting `.dvc` pointers as stage dependencies. Training independently
-checks that the actual CSV matches the pointer before logging its identity.
+There was an unchanged invocation at 60 trees and then skipped through all
+stages again. The final `dvc.lock` and `metrics/metrics.json` are
+committed, and metrics have `cache: false`. Source files are dependencies.
+DVC tracks dataset bytes as a dependency rather than accepting `.dvc`
+pointers as stage dependencies. Training independently checks that the actual
+CSV matches the pointer before logging its identity.
 
 | Trees | Run ID | RMSE | MAE | R² |
 | --- | --- | --- | --- | --- |
@@ -179,12 +144,12 @@ produced the 50-tree run listed above.
 
 ## Local services (R2)
 
-On 15 October 2026 the Compose configuration was extended using the supplied
+On October 15 the Compose configuration was extended using the supplied
 Week 5 lab stack, which uses the same infrastructure as Week 4. No Week 5
 validation functionality is included. The project keeps its existing
-`bike-demand-hw1` name and `silo-data` volume so the two stored dataset versions
-remain available. The existing Silo image also supplies `mcli` for the bucket
-job; the project keeps its `SILO_*` variable names.
+`bike-demand-hw1` name and `silo-data` volume so the two stored dataset
+versions remain available. The existing Silo image also supplies `mcli` for the
+bucket job; the project keeps its `SILO_*` variable names.
 
 ```text
 docker compose up -d --wait --build
@@ -199,19 +164,19 @@ silo-create-bucket   exited              0
 
 The bucket job now creates both `dvc-storage` and `mlflow-artifacts`, then
 exits. MLflow waits for its successful completion and PostgreSQL readiness.
-The server uses the course's pinned MLflow 3.13.0 dependencies. Actual passwords
-are stored in ignored `.env`; `.env.example` contains placeholders.
+The server uses the course's pinned MLflow 3.13.0 dependencies. Actual
+passwords are stored in ignored `.env`; `.env.example` contains placeholders.
 
 ## Dataset version 1
 
-The original UCI hourly bike-sharing `data/hour.csv` is the first DVC version.
-It has 17,379 data rows and 17 columns. `data/hour.csv.dvc` names MD5
-`d50bd5a6f55131e72a7bedc334e2fce1` and size `1156736` bytes. The DVC
-remote is `s3://dvc-storage` on the local Silo endpoint
+The original UCI hourly bike-sharing `data/hour.csv` is the first DVC
+version. It has 17,379 data rows and 17 columns. `data/hour.csv.dvc` names
+MD5 `d50bd5a6f55131e72a7bedc334e2fce1` and size `1156736` bytes. The
+DVC remote is `s3://dvc-storage` on the local Silo endpoint
 `http://127.0.0.1:5510`. Its object is at
 `s3://dvc-storage/files/md5/d5/0bd5a6f55131e72a7bedc334e2fce1`.
 
-The local setup was verified on 14 October 2026:
+The local setup was verified on October 14:
 
 ```text
 docker compose up -d --wait
@@ -236,17 +201,17 @@ uv run dvc push
 Remove-Item Env:AWS_ACCESS_KEY_ID,Env:AWS_SECRET_ACCESS_KEY
 ```
 
-The remote definition in `.dvc/config` contains only the URL and endpoint, not
-credentials. `.dvc/config.local`, `.dvc/cache`, `.dvc/tmp`, `.env`, and the raw
-CSV are Git-ignored.
+The remote definition in `.dvc/config` contains only the URL and
+endpoint, not credentials. `.dvc/config.local`, `.dvc/cache`, `.dvc/tmp`,
+`.env`, and the raw CSV are Git-ignored.
 
 ### Fresh-clone pull
 
 I cloned commit `5486412` into a new local directory with `git clone --local
 --no-hardlinks . <new-directory>`, copied only the Git-ignored `.env` there,
-then ran `uv sync --all-groups` and `uv run dvc pull` with the AWS environment
-variables set as above. The checkout had no `data/hour.csv` before the pull;
-it had `data/hour.csv.dvc`.
+then ran `uv sync --all-groups` and `uv run dvc pull` with the AWS
+environment variables set as above. The checkout had no `data/hour.csv` before
+the pull; it had `data/hour.csv.dvc`.
 
 ```text
 DATA_PRESENT=False
@@ -269,12 +234,12 @@ shared Silo server.
 
 ## Dataset version 2
 
-Version two keeps all 17,379 observations but drops `instant` (an arbitrary row
-ID), `casual` and `registered`. The latter two add exactly to the target `cnt`
-in every row, so retaining them would leak the answer into training. The new
-CSV has 14 columns and the pointer records MD5
-`bcbdba906e4a9964cfafed8b14549a62`, size `944753` bytes. Its Silo object
-is `s3://dvc-storage/files/md5/bc/bdba906e4a9964cfafed8b14549a62`.
+Version two keeps all 17,379 observations but drops `instant` (an arbitrary
+row ID), `casual` and `registered`. The latter two add exactly to the target
+`cnt` in every row, so retaining them would leak the answer into training. The
+new CSV has 14 columns and the pointer records MD5
+`bcbdba906e4a9964cfafed8b14549a62`, size `944753` bytes. Its Silo
+object is `s3://dvc-storage/files/md5/bc/bdba906e4a9964cfafed8b14549a62`.
 
 ```text
 uv run dvc status data/hour.csv.dvc
@@ -303,6 +268,6 @@ Get-FileHash data/hour.csv -Algorithm MD5
 BCBDBA906E4A9964CFAFED8B14549A62
 ```
 
-Git selects the pointer; DVC restores the bytes named by that pointer from its
-cache. Both hashes were also confirmed present in Silo after extending the
-Compose stack.
+Git selects the pointer; DVC restores the bytes named by that pointer from
+its cache. Both hashes were also confirmed present in Silo after extending
+the Compose stack.

@@ -1,15 +1,20 @@
 # Data Dictionary — UCI Bike sharing dataset (hourly)
 
-Document your data like a domain expert would. You will rarely be the expert on
-your data; find and write down that knowledge. See the course example for the
-expected depth: `datasets/diabetes-pima.md` in the course materials.
+This dictionary describes the original hourly CSV and the curated version used
+by the HW1 pipeline. The feature table retains the three removed source columns
+so the transformation is explicit.
 
 ## Overview
 
 - Dataset name / source / license:
     UCI Bike Sharing Dataset, hourly Capital Bikeshare rental counts in Washington, DC. (2011-2012). https://www.kaggle.com/datasets/sriramm2010/uci-bike-sharing-data?resource=download. CC BY-SA 4.0
 - Rows / features:
-    17379 rows, 17 CSV columns: 13 candidate calendar/weather predictors, a record ID, two rental-count columns, one target. Target leakage, casual+registered=cnt
+    Original version: 17,379 rows and 17 columns: 12 numeric/coded calendar/weather
+    predictors, a date, a record ID, two rental-count components, and one target.
+    Current DVC version: the same 17,379 rows and 14 columns, after removing
+    `instant`, `casual`, and `registered`. It contains 12 predictors, the date
+    used for splitting, and the target. Current MD5:
+    `bcbdba906e4a9964cfafed8b14549a62` (944,753 bytes).
 - Task: regression — predict total rentals in an hour, target column: cnt.
 - Target range: 1-977 rentals/hour in the original hourly file, mean is approximately 189.
 
@@ -38,7 +43,7 @@ expected depth: `datasets/diabetes-pima.md` in the course materials.
 
 ## Known quirks / caveats
 
-- Direct target leakage: cnt = casual ! registered. Never include casual or registered among predictors.
+- Direct target leakage: `cnt = casual + registered`. Never include casual or registered among predictors.
 
 - No reported cell-level missing values, but not every hour is represented. CSV is not guranteed to have an observation for all 24 hours of every day.
 
